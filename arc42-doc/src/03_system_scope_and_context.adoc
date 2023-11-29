@@ -1,0 +1,14 @@
+ifndef::imagesdir[:imagesdir: ../images]
+
+[[section-system-scope-and-context]]
+== System Scope and Context
+
+=== Business Context
+
+There are no business relationships other than the already mentioned shareholders.
+
+=== Technical Context
+
+TODO: I need to discuss in which way inputs should be made.
+
+Inputs so far are: dataset, batch size, number of clients, number of epochs

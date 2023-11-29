@@ -1,0 +1,6 @@
+ifndef::imagesdir[:imagesdir: ../images]
+
+[[section-architecture-constraints]]
+== Architecture Constraints
+
+There are no architecture restraints other than the usage of Federated Learning to train a model.

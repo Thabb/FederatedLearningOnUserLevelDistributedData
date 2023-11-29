@@ -1,0 +1,28 @@
+ifndef::imagesdir[:imagesdir: ../images]
+
+[[section-introduction-and-goals]]
+== Introduction and Goals
+
+=== Requirements Overview
+
+This project has the goal of developing a working solution for Federated Learning on user-level distributed data.
+The solution should be well documented and easily expandable to support the further development of future projects.
+
+=== Quality Goals
+
+[options="header", cols="1,2"]
+|===
+|Quality Goal|Explanation
+| Reliable | _The project should perform with a consistent and reproducible quality._
+| Expandable | _Other projects should be easily buildable upon the foundations of this project._
+|===
+
+=== Stakeholders
+
+[options="header", cols="2,2,3"]
+|===
+|Name|Role|Expectations
+| Lukas auf der Landwehr | _Developer_ | _A project that is interesting and completable in a reasonable timeframe._
+| Lukas Lange | _Supervisor_ | _A code base to expand on in the future._
+| Prof. Dr. Erhard Rahm | _Professor/Corrector_ | _A thesis based on scientific research._
+|===
