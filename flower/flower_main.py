@@ -1,12 +1,11 @@
 import datetime
-from typing import List, Tuple
 
 import torch
 
 import flwr as fl
-from flwr.common import Metrics
 
 from flower.data_loader import load_datasets
+from flower.evaluation import weighted_average
 from model import Net
 from client import FlowerClient
 
@@ -29,6 +28,7 @@ CLASSES = (
 )
 NUM_CLIENTS = 5000
 BATCH_SIZE = 1
+NUM_ROUNDS = 5
 
 train_loaders, val_loaders, test_loader = load_datasets(NUM_CLIENTS, BATCH_SIZE)
 net = Net().to(DEVICE)
@@ -48,15 +48,6 @@ def client_fn(cid: str) -> FlowerClient:
 
     # Create a  single Flower client representing a single organization
     return FlowerClient(net, train_loader, val_loader)
-
-
-def weighted_average(metrics: List[Tuple[int, Metrics]]) -> Metrics:
-    # Multiply accuracy of each client by number of examples used
-    accuracies = [num_examples * m["accuracy"] for num_examples, m in metrics]
-    examples = [num_examples for num_examples, _ in metrics]
-
-    # Aggregate and return custom metric (weighted average)
-    return {"accuracy": sum(accuracies) / sum(examples)}
 
 
 # Create FedAvg strategy
@@ -80,7 +71,7 @@ print("start time: ", datetime.datetime.now())
 fl.simulation.start_simulation(
     client_fn=client_fn,
     num_clients=NUM_CLIENTS,
-    config=fl.server.ServerConfig(num_rounds=5),
+    config=fl.server.ServerConfig(num_rounds=NUM_ROUNDS),
     strategy=strategy,
     client_resources=client_resources,
 )
