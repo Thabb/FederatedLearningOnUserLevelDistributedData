@@ -5,6 +5,11 @@ import numpy as np
 import torch
 import flwr as fl
 
+"""
+The Client itself. Holds all the training and evaluation logic.
+"""
+
+
 # TODO: Needs to go/get unified with the other "DEVICE" in flower_main
 DEVICE = torch.device("cpu")  # "cpu" for cpu and "cuda" for GPU
 
@@ -12,7 +17,7 @@ DEVICE = torch.device("cpu")  # "cpu" for cpu and "cuda" for GPU
 def train(net, trainloader, epochs: int, verbose=False):
     """Train the network on the training set."""
     criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(net.parameters())
+    optimizer = torch.optim.Adam(net.parameters(), lr=0.001)  # TODO: Move the learning rate into the main file
     net.train()
     for epoch in range(epochs):
         correct, total, epoch_loss = 0, 0, 0.0
@@ -62,17 +67,20 @@ def set_parameters(net, parameters: List[np.ndarray]):
 
 
 class FlowerClient(fl.client.NumPyClient):
-    def __init__(self, net, trainloader, valloader):
+    epochs = 1
+
+    def __init__(self, net, trainloader, valloader, EPOCHS):
         self.net = net
         self.trainloader = trainloader
         self.valloader = valloader
+        self.epochs = EPOCHS
 
     def get_parameters(self, config):
         return get_parameters(self.net)
 
     def fit(self, parameters, config):
         set_parameters(self.net, parameters)
-        train(self.net, self.trainloader, epochs=1)
+        train(self.net, self.trainloader, epochs=self.epochs)
         return get_parameters(self.net), len(self.trainloader), {}
 
     def evaluate(self, parameters, config):

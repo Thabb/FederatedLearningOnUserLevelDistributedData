@@ -3,12 +3,17 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader, random_split
 from torchvision.datasets import CIFAR10
 
+"""
+Loads all the data from the dataset and returns it in the form of data loaders.
+"""
+
 
 def load_datasets(num_clients: int, batch_size: int):
     # Download and transform CIFAR-10 (train and test)
     transform = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
     )
+    # TODO: Make the dataset changeable from the main file
     train_set = CIFAR10("./dataset", train=True, download=True, transform=transform)
     test_set = CIFAR10("./dataset", train=False, download=True, transform=transform)
 

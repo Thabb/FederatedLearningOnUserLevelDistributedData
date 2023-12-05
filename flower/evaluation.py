@@ -2,6 +2,10 @@ from typing import List, Tuple
 
 from flwr.common import Metrics
 
+"""
+This file holds different evaluation methods.
+"""
+
 
 def weighted_average(metrics: List[Tuple[int, Metrics]]) -> Metrics:
     # Multiply accuracy of each client by number of examples used

@@ -2,6 +2,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+"""
+The neural network.
+"""
+
 
 class Net(nn.Module):
     def __init__(self) -> None:
