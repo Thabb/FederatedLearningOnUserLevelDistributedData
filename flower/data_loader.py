@@ -22,9 +22,6 @@ def load_datasets(num_clients: int, batch_size: int):
     lengths = [partition_size] * num_clients
     datasets = random_split(train_set, lengths, torch.Generator().manual_seed(42))
 
-    for dataset in datasets:
-        print(dataset)
-
     # Split each partition into train/val and create DataLoader
     train_loaders = []
     val_loaders = []
