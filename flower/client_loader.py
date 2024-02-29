@@ -10,6 +10,9 @@ from model import Net
 
 
 class ClientLoader:
+    """
+    Loads a client and loads the dataset depending on the number of clients and the batch size.
+    """
     train_loaders: [DataLoader] = []
     val_loaders: [DataLoader] = []
     test_loaders: DataLoader = None
@@ -18,6 +21,14 @@ class ClientLoader:
     client_resources: dict = None
 
     def __init__(self, num_clients: int, batch_size: int, epochs: int, processing_unit: str):
+        """
+        Initializes the different dataloaders and splits them between the number of clients.
+
+        :param num_clients: Number of clients used in the simulation.
+        :param batch_size: Number of examples that are used in one batch.
+        :param epochs: Number of times the examples are looked at in one round.
+        :param processing_unit: Is the simulation done on a "cpu" or "cuda" (GPU).
+        """
         self.train_loaders, self.val_loaders, self.test_loader = load_datasets(num_clients, batch_size)
         self.EPOCHS = epochs
         self.DEVICE = torch.device(processing_unit)
@@ -33,7 +44,13 @@ class ClientLoader:
         )
 
     def client_fn(self, cid: str) -> FlowerClient:
-        """Create a Flower client representing a single organization."""
+        """
+        Create a Flower client representing a single organization.
+        This function will be called during the simulation process.
+
+        :param cid: Id for the client.
+        :return: A fully functioning client that is ready to be used in the simulation.
+        """
 
         # Load model
         net = Net().to(self.DEVICE)

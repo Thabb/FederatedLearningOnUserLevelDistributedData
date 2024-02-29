@@ -1,14 +1,19 @@
+from typing import Tuple, List
+
 import torch
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader, random_split
 from torchvision.datasets import CIFAR10
 
-"""
-Loads all the data from the dataset and returns it in the form of data loaders.
-"""
 
-
-def load_datasets(num_clients: int, batch_size: int):
+def load_datasets(num_clients: int, batch_size: int) -> Tuple[List[DataLoader], List[DataLoader], DataLoader]:
+    """
+    Loads all the data from the dataset and returns it in the form of data loaders.
+    :param num_clients: The number of clients determines the number of data loaders.
+    :param batch_size: Is given to each data loader the batch size for each.
+    :return: A tuple, containing a list of data loaders for training, a list of equal size of data loaders for
+    evaluation and a single data loader for testing.
+    """
     # Download and transform CIFAR-10 (train and test)
     transform = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]

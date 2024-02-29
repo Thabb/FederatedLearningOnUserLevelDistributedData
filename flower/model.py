@@ -2,13 +2,16 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-"""
-The neural network.
-"""
-
 
 class Net(nn.Module):
+    """
+    A basic neural network.
+    """
+
     def __init__(self) -> None:
+        """
+        Initializes all parameters for the NN.
+        """
         super(Net, self).__init__()
         self.conv1 = nn.Conv2d(3, 6, 5)
         self.pool = nn.MaxPool2d(2, 2)
@@ -18,6 +21,11 @@ class Net(nn.Module):
         self.fc3 = nn.Linear(84, 10)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Calculates the next tensor based on the previous one and the given parameters.
+        :param x: The previous tensor.
+        :return: A new tensor.
+        """
         x = self.pool(F.relu(self.conv1(x)))
         x = self.pool(F.relu(self.conv2(x)))
         x = x.view(-1, 16 * 5 * 5)
