@@ -17,12 +17,13 @@ NUM_CLIENTS: int = 10
 BATCH_SIZE: int = 1
 NUM_ROUNDS: int = 5
 EPOCHS: int = 1
+LEARNING_RATE: float = 0.01
 
 # ========================================
 # ===============SIMULATION===============
 # ========================================
 
-client_loader: ClientLoader = ClientLoader(NUM_CLIENTS, BATCH_SIZE, EPOCHS, PROCESSING_UNIT)
+client_loader: ClientLoader = ClientLoader(NUM_CLIENTS, BATCH_SIZE, EPOCHS, PROCESSING_UNIT, LEARNING_RATE)
 
 # Create FedAvg strategy
 strategy = fl.server.strategy.FedAvg(

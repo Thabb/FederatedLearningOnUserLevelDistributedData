@@ -19,8 +19,9 @@ class ClientLoader:
     EPOCHS: int = 1
     DEVICE: device = None
     client_resources: dict = None
+    LEARNING_RATE: float = 0.01
 
-    def __init__(self, num_clients: int, batch_size: int, epochs: int, processing_unit: str):
+    def __init__(self, num_clients: int, batch_size: int, epochs: int, processing_unit: str, learning_rate: float):
         """
         Initializes the different dataloaders and splits them between the number of clients.
 
@@ -32,6 +33,7 @@ class ClientLoader:
         self.train_loaders, self.val_loaders, self.test_loader = load_datasets(num_clients, batch_size)
         self.EPOCHS = epochs
         self.DEVICE = torch.device(processing_unit)
+        self.LEARNING_RATE = learning_rate
 
         # Specify client resources if you need GPU (defaults to 1 CPU and 0 GPU)
         # this strongly depends on the physical device, that is being used to run the simulation
@@ -62,4 +64,4 @@ class ClientLoader:
         val_loader = self.val_loaders[int(cid)]
 
         # Create a  single Flower client representing a single organization
-        return FlowerClient(net, train_loader, val_loader, self.EPOCHS, self.DEVICE)
+        return FlowerClient(net, train_loader, val_loader, self.EPOCHS, self.DEVICE, self.LEARNING_RATE)

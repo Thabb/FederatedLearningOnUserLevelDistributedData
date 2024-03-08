@@ -9,27 +9,15 @@ from flwr.common import Scalar
 from torch.nn import Module
 from torch.utils.data import DataLoader
 
-"""
-The Client itself. Holds all the training and evaluation logic.
-"""
-
-
-# 1. [X] Funktionen durchkommentieren/mit Docstring versehen.
-# 2. [X] Client und Methoden durchkommentieren/mit Docstring versehen.
-# 3. [ ] Variablen (auch innerhalb der Funktion) mit typing eindeutig machen.
-# 4. [X] Funktionen zu Methoden machen.
-# 5. [X] todos loswerden/argumente tatsächlich übergeben und nicht doppelt initialiseren.
-# 6. [ ] Warnings in allen files durchgehen.
-
 
 class FlowerClient(fl.client.NumPyClient):
     """
-    Representation of a single client. Multiple clients will be initialized during the simulation.
+    Representation of a single client. Multiple clients are initialized during the simulation.
     Clients hold all the logic needed for training and evaluation.
     """
 
     def __init__(self, net: Module, train_loader: DataLoader, val_loader: DataLoader, epochs: int,
-                 device: device):
+                 device: device, learning_rate: float):
         """
         Initializes the client with all data that is needed for training and evaluation of the model.
         :param net: Neural network.
@@ -42,6 +30,7 @@ class FlowerClient(fl.client.NumPyClient):
         self.val_loader: DataLoader = val_loader
         self.epochs: int = epochs
         self.device: device = device
+        self.learning_rate = learning_rate
 
     def get_parameters(self, config: Dict[str, Scalar]) -> List[np.ndarray]:
         """
@@ -82,7 +71,7 @@ class FlowerClient(fl.client.NumPyClient):
         :param verbose: Should there be a print of information?
         """
         criterion = torch.nn.CrossEntropyLoss()
-        optimizer = torch.optim.Adam(net.parameters(), lr=0.001)  # TODO: Move the learning rate into the main file
+        optimizer = torch.optim.Adam(net.parameters(), lr=self.learning_rate)
         net.train()
         for epoch in range(epochs):
             correct, total, epoch_loss = 0, 0, 0.0
