@@ -62,4 +62,4 @@ class ClientLoader:
         val_loader = self.val_loaders[int(cid)]
 
         # Create a  single Flower client representing a single organization
-        return FlowerClient(net, train_loader, val_loader, self.EPOCHS)
+        return FlowerClient(net, train_loader, val_loader, self.EPOCHS, self.DEVICE)

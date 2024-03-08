@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+import torch.nn.functional as f
 
 
 class Net(nn.Module):
@@ -26,10 +26,10 @@ class Net(nn.Module):
         :param x: The previous tensor.
         :return: A new tensor.
         """
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
+        x = self.pool(f.relu(self.conv1(x)))
+        x = self.pool(f.relu(self.conv2(x)))
         x = x.view(-1, 16 * 5 * 5)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
+        x = f.relu(self.fc1(x))
+        x = f.relu(self.fc2(x))
         x = self.fc3(x)
         return x
