@@ -2,6 +2,7 @@ import flwr as fl
 
 from flower.client_loader import ClientLoader
 from flower.evaluation import weighted_average
+from flower.flwr.simulation import start_simulation
 
 """
 This file contains all the different variables that might influence the outcome of training.
@@ -18,6 +19,7 @@ BATCH_SIZE: int = 1
 NUM_ROUNDS: int = 5
 EPOCHS: int = 1
 LEARNING_RATE: float = 0.01
+STRATEGY: str = "FedAvg"  # "FedAvg" or "FedDC"
 
 # ========================================
 # ===============SIMULATION===============
@@ -25,7 +27,7 @@ LEARNING_RATE: float = 0.01
 
 client_loader: ClientLoader = ClientLoader(NUM_CLIENTS, BATCH_SIZE, EPOCHS, PROCESSING_UNIT, LEARNING_RATE)
 
-# Create FedAvg strategy
+# Create strategy
 strategy = fl.server.strategy.FedAvg(
     fraction_fit=1.0,  # Sample 100% of available clients for training
     fraction_evaluate=0.5,  # Sample 50% of available clients for evaluation
@@ -35,8 +37,9 @@ strategy = fl.server.strategy.FedAvg(
     evaluate_metrics_aggregation_fn=weighted_average,  # <-- pass the metric aggregation function
 )
 
+
 # Start simulation
-fl.simulation.start_simulation(
+start_simulation(
     client_fn=client_loader.client_fn,
     num_clients=NUM_CLIENTS,
     config=fl.server.ServerConfig(num_rounds=NUM_ROUNDS),
