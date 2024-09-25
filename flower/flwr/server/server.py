@@ -232,22 +232,28 @@ class Server:
 
         # TODO: This is but a prototype. If this works this needs to be rewritten in a shorter, more comprehensible form
         # Check if this Federated Daisy-Chaining
-        if is_daisy_chaining:
-            log(INFO, "Fed-DC has been started with b = %s and d = %s", aggregate_cycle, daisy_chaining_cycle)
-            # Check if this is an aggregate round. If it is this is the only case in Federated Daisy-Chaining in
-            # which no parameters need to be replaced.
-            if aggregate_cycle - 1 % server_round:
+        if is_daisy_chaining and not server_round == 1:
+            log(INFO, "Daisy chaining round %s has been started with b = %s and d = %s",
+                server_round-1,
+                aggregate_cycle,
+                daisy_chaining_cycle)
+            # Check if the previous round was an aggregate round. If it is this is the only case in
+            # Federated Daisy-Chaining in which no parameters need to be replaced.
+            if server_round % aggregate_cycle - 1:
+                log(INFO, "This is not an aggregate round.")
                 # Check if this is a Daisy-Chaining round.
-                if daisy_chaining_cycle % server_round:
-                    # This is no Daisy-Chaining round, so the parameters from the old round will apply and are
-                    # assigned to their respective client.
+                if server_round % daisy_chaining_cycle - 1:
+                    log(INFO, "This is not a daisy chaining round.")
+                    # The previous round was no Daisy-Chaining round, so the parameters from the previous round will
+                    # apply and are assigned to their respective client.
                     for client_instruction in client_instructions:
                         for saved_parameter in self.saved_parameters:
                             if client_instruction[0].cid == saved_parameter[0].cid:
                                 client_instruction[1].parameters = saved_parameter[1].parameters
                 else:
-                    # This is a Daisy-Chaining round, so the parameters from the old round will apply but are swapped
-                    # randomly between clients.
+                    log(INFO, "This is a daisy chaining round.")
+                    # The previous round was a Daisy-Chaining round, so the parameters from the old round will
+                    # apply but are swapped randomly between clients.
                     temp_clients: List[ClientProxy] = [temp_item[0] for temp_item in self.saved_parameters]
                     temp_fitres: List[FitRes] = [temp_item[1] for temp_item in self.saved_parameters]
                     random.shuffle(temp_fitres)
@@ -257,6 +263,8 @@ class Server:
                         for temp_new_parameter in temp_new_parameters:
                             if client_instruction[0].cid == temp_new_parameter[0].cid:
                                 client_instruction[1].parameters = temp_new_parameter[1].parameters
+            else:
+                log(INFO, "This is an aggregate round.")
 
         if not client_instructions:
             log(INFO, "fit_round %s: no clients selected, cancel", server_round)
