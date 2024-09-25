@@ -82,6 +82,9 @@ def start_simulation(  # pylint: disable=too-many-arguments
     actor_type: Type[VirtualClientEngineActor] = DefaultActor,
     actor_kwargs: Optional[Dict[str, Any]] = None,
     actor_scheduling: Union[str, NodeAffinitySchedulingStrategy] = "DEFAULT",
+    is_daisy_chaining: bool = False,
+    daisy_chaining_cycle: int = 1,
+    aggregate_cycle: int = 1,
 ) -> History:
     """Start a Ray-based Flower simulation server.
 
@@ -289,6 +292,9 @@ def start_simulation(  # pylint: disable=too-many-arguments
         hist = run_fl(
             server=initialized_server,
             config=initialized_config,
+            is_daisy_chaining=is_daisy_chaining,
+            daisy_chaining_cycle=daisy_chaining_cycle,
+            aggregate_cycle=aggregate_cycle,
         )
     except Exception as ex:
         log(ERROR, ex)

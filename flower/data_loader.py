@@ -20,7 +20,11 @@ def load_datasets(num_clients: int, batch_size: int) -> Tuple[List[DataLoader], 
     )
     # TODO: Make the dataset changeable from the main file
     train_set = CIFAR10("./dataset", train=True, download=True, transform=transform)
+    train_set = random_split(train_set, [0.1, 0.9], torch.Generator().manual_seed(40))[0]
     test_set = CIFAR10("./dataset", train=False, download=True, transform=transform)
+    test_set = random_split(test_set, [0.1, 0.9], torch.Generator().manual_seed(41))[0]
+    print("Train length: " + str(len(train_set)))
+    print("Test length: " + str(len(test_set)))
 
     # Split training set into partitions to simulate the individual dataset
     partition_size = len(train_set) // num_clients

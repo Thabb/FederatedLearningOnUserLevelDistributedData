@@ -219,9 +219,18 @@ def init_defaults(
 def run_fl(
     server: Server,
     config: ServerConfig,
+    is_daisy_chaining: bool = False,
+    daisy_chaining_cycle: int = 1,
+    aggregate_cycle: int = 1,
 ) -> History:
     """Train a model on the given server and return the History object."""
-    hist = server.fit(num_rounds=config.num_rounds, timeout=config.round_timeout)
+    hist = server.fit(
+        num_rounds=config.num_rounds,
+        timeout=config.round_timeout,
+        is_daisy_chaining=is_daisy_chaining,
+        daisy_chaining_cycle=daisy_chaining_cycle,
+        aggregate_cycle=aggregate_cycle,
+    )
     log(INFO, "app_fit: losses_distributed %s", str(hist.losses_distributed))
     log(INFO, "app_fit: metrics_distributed_fit %s", str(hist.metrics_distributed_fit))
     log(INFO, "app_fit: metrics_distributed %s", str(hist.metrics_distributed))

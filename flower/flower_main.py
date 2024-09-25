@@ -14,12 +14,14 @@ It also contains everything related to the simulation itself.
 # ======================================
 
 PROCESSING_UNIT: str = "cpu"  # "cpu" for cpu and "cuda" for GPU
-NUM_CLIENTS: int = 10
+NUM_CLIENTS: int = 500
 BATCH_SIZE: int = 1
-NUM_ROUNDS: int = 5
+NUM_ROUNDS: int = 50
 EPOCHS: int = 1
-LEARNING_RATE: float = 0.01
-STRATEGY: str = "FedAvg"  # "FedAvg" or "FedDC"
+LEARNING_RATE: float = 0.001
+IS_DAISY_CHAINING: bool = True  # False for Federated Averaging, True for Federated Daisy-Chaining
+DAISY_CHAINING_CYCLE: int = 1  # Only used if IS_DAISY_CHAINING is "True", otherwise its ignored
+AGGREGATE_CYCLE: int = 10  # Only used if IS_DAISY_CHAINING is "True", otherwise its ignored
 
 # ========================================
 # ===============SIMULATION===============
@@ -45,4 +47,7 @@ start_simulation(
     config=fl.server.ServerConfig(num_rounds=NUM_ROUNDS),
     strategy=strategy,
     client_resources=client_loader.client_resources,
+    is_daisy_chaining=IS_DAISY_CHAINING,
+    daisy_chaining_cycle=DAISY_CHAINING_CYCLE,
+    aggregate_cycle=AGGREGATE_CYCLE,
 )

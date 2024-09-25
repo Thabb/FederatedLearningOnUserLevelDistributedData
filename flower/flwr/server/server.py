@@ -14,8 +14,8 @@
 # ==============================================================================
 """Flower server."""
 
-
 import concurrent.futures
+import random
 import timeit
 from logging import DEBUG, INFO
 from typing import Dict, List, Optional, Tuple, Union
@@ -56,11 +56,12 @@ class Server:
     """Flower server."""
 
     def __init__(
-        self,
-        *,
-        client_manager: ClientManager,
-        strategy: Optional[Strategy] = None,
+            self,
+            *,
+            client_manager: ClientManager,
+            strategy: Optional[Strategy] = None,
     ) -> None:
+        self.saved_parameters: List[Tuple[ClientProxy, FitRes]] = []
         self._client_manager: ClientManager = client_manager
         self.parameters: Parameters = Parameters(
             tensors=[], tensor_type="numpy.ndarray"
@@ -81,7 +82,14 @@ class Server:
         return self._client_manager
 
     # pylint: disable=too-many-locals
-    def fit(self, num_rounds: int, timeout: Optional[float]) -> History:
+    def fit(
+            self,
+            num_rounds: int,
+            timeout: Optional[float],
+            is_daisy_chaining: bool = False,
+            daisy_chaining_cycle: int = 1,
+            aggregate_cycle: int = 1,
+    ) -> History:
         """Run federated averaging for a number of rounds."""
         history = History()
 
@@ -109,6 +117,9 @@ class Server:
             res_fit = self.fit_round(
                 server_round=current_round,
                 timeout=timeout,
+                is_daisy_chaining=is_daisy_chaining,
+                daisy_chaining_cycle=daisy_chaining_cycle,
+                aggregate_cycle=aggregate_cycle,
             )
             if res_fit is not None:
                 parameters_prime, fit_metrics, _ = res_fit  # fit_metrics_aggregated
@@ -154,9 +165,9 @@ class Server:
         return history
 
     def evaluate_round(
-        self,
-        server_round: int,
-        timeout: Optional[float],
+            self,
+            server_round: int,
+            timeout: Optional[float],
     ) -> Optional[
         Tuple[Optional[float], Dict[str, Scalar], EvaluateResultsAndFailures]
     ]:
@@ -202,19 +213,50 @@ class Server:
         return loss_aggregated, metrics_aggregated, (results, failures)
 
     def fit_round(
-        self,
-        server_round: int,
-        timeout: Optional[float],
+            self,
+            server_round: int,
+            timeout: Optional[float],
+            is_daisy_chaining: bool = False,
+            daisy_chaining_cycle: int = 1,
+            aggregate_cycle: int = 1,
     ) -> Optional[
         Tuple[Optional[Parameters], Dict[str, Scalar], FitResultsAndFailures]
     ]:
         """Perform a single round of federated averaging."""
         # Get clients and their respective instructions from strategy
-        client_instructions = self.strategy.configure_fit(
+        client_instructions: List[Tuple[ClientProxy, FitIns]] = self.strategy.configure_fit(
             server_round=server_round,
             parameters=self.parameters,
             client_manager=self._client_manager,
         )
+
+        # TODO: This is but a prototype. If this works this needs to be rewritten in a shorter, more comprehensible form
+        # Check if this Federated Daisy-Chaining
+        if is_daisy_chaining:
+            log(INFO, "Fed-DC has been started with b = %s and d = %s", aggregate_cycle, daisy_chaining_cycle)
+            # Check if this is an aggregate round. If it is this is the only case in Federated Daisy-Chaining in
+            # which no parameters need to be replaced.
+            if aggregate_cycle - 1 % server_round:
+                # Check if this is a Daisy-Chaining round.
+                if daisy_chaining_cycle % server_round:
+                    # This is no Daisy-Chaining round, so the parameters from the old round will apply and are
+                    # assigned to their respective client.
+                    for client_instruction in client_instructions:
+                        for saved_parameter in self.saved_parameters:
+                            if client_instruction[0].cid == saved_parameter[0].cid:
+                                client_instruction[1].parameters = saved_parameter[1].parameters
+                else:
+                    # This is a Daisy-Chaining round, so the parameters from the old round will apply but are swapped
+                    # randomly between clients.
+                    temp_clients: List[ClientProxy] = [temp_item[0] for temp_item in self.saved_parameters]
+                    temp_fitres: List[FitRes] = [temp_item[1] for temp_item in self.saved_parameters]
+                    random.shuffle(temp_fitres)
+                    temp_new_parameters: List[Tuple[ClientProxy, FitRes]] = list((temp_clients[x], temp_fitres[x])
+                                                                                 for x in range(len(temp_fitres)))
+                    for client_instruction in client_instructions:
+                        for temp_new_parameter in temp_new_parameters:
+                            if client_instruction[0].cid == temp_new_parameter[0].cid:
+                                client_instruction[1].parameters = temp_new_parameter[1].parameters
 
         if not client_instructions:
             log(INFO, "fit_round %s: no clients selected, cancel", server_round)
@@ -241,6 +283,12 @@ class Server:
             len(failures),
         )
 
+        # Save clients and their parameters for next fit round.
+        self.saved_parameters = results
+        for failure in failures:
+            if type(failure) is Tuple[ClientProxy, FitRes]:
+                self.saved_parameters.append(failure)
+
         # Aggregate training results
         aggregated_result: Tuple[
             Optional[Parameters],
@@ -248,6 +296,7 @@ class Server:
         ] = self.strategy.aggregate_fit(server_round, results, failures)
 
         parameters_aggregated, metrics_aggregated = aggregated_result
+
         return parameters_aggregated, metrics_aggregated, (results, failures)
 
     def disconnect_all_clients(self, timeout: Optional[float]) -> None:
@@ -282,9 +331,9 @@ class Server:
 
 
 def reconnect_clients(
-    client_instructions: List[Tuple[ClientProxy, ReconnectIns]],
-    max_workers: Optional[int],
-    timeout: Optional[float],
+        client_instructions: List[Tuple[ClientProxy, ReconnectIns]],
+        max_workers: Optional[int],
+        timeout: Optional[float],
 ) -> ReconnectResultsAndFailures:
     """Instruct clients to disconnect and never reconnect."""
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -311,9 +360,9 @@ def reconnect_clients(
 
 
 def reconnect_client(
-    client: ClientProxy,
-    reconnect: ReconnectIns,
-    timeout: Optional[float],
+        client: ClientProxy,
+        reconnect: ReconnectIns,
+        timeout: Optional[float],
 ) -> Tuple[ClientProxy, DisconnectRes]:
     """Instruct client to disconnect and (optionally) reconnect later."""
     disconnect = client.reconnect(
@@ -324,9 +373,9 @@ def reconnect_client(
 
 
 def fit_clients(
-    client_instructions: List[Tuple[ClientProxy, FitIns]],
-    max_workers: Optional[int],
-    timeout: Optional[float],
+        client_instructions: List[Tuple[ClientProxy, FitIns]],
+        max_workers: Optional[int],
+        timeout: Optional[float],
 ) -> FitResultsAndFailures:
     """Refine parameters concurrently on all selected clients."""
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -350,7 +399,7 @@ def fit_clients(
 
 
 def fit_client(
-    client: ClientProxy, ins: FitIns, timeout: Optional[float]
+        client: ClientProxy, ins: FitIns, timeout: Optional[float]
 ) -> Tuple[ClientProxy, FitRes]:
     """Refine parameters on a single client."""
     fit_res = client.fit(ins, timeout=timeout)
@@ -358,9 +407,9 @@ def fit_client(
 
 
 def _handle_finished_future_after_fit(
-    future: concurrent.futures.Future,  # type: ignore
-    results: List[Tuple[ClientProxy, FitRes]],
-    failures: List[Union[Tuple[ClientProxy, FitRes], BaseException]],
+        future: concurrent.futures.Future,  # type: ignore
+        results: List[Tuple[ClientProxy, FitRes]],
+        failures: List[Union[Tuple[ClientProxy, FitRes], BaseException]],
 ) -> None:
     """Convert finished future into either a result or a failure."""
     # Check if there was an exception
@@ -383,9 +432,9 @@ def _handle_finished_future_after_fit(
 
 
 def evaluate_clients(
-    client_instructions: List[Tuple[ClientProxy, EvaluateIns]],
-    max_workers: Optional[int],
-    timeout: Optional[float],
+        client_instructions: List[Tuple[ClientProxy, EvaluateIns]],
+        max_workers: Optional[int],
+        timeout: Optional[float],
 ) -> EvaluateResultsAndFailures:
     """Evaluate parameters concurrently on all selected clients."""
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -409,9 +458,9 @@ def evaluate_clients(
 
 
 def evaluate_client(
-    client: ClientProxy,
-    ins: EvaluateIns,
-    timeout: Optional[float],
+        client: ClientProxy,
+        ins: EvaluateIns,
+        timeout: Optional[float],
 ) -> Tuple[ClientProxy, EvaluateRes]:
     """Evaluate parameters on a single client."""
     evaluate_res = client.evaluate(ins, timeout=timeout)
@@ -419,9 +468,9 @@ def evaluate_client(
 
 
 def _handle_finished_future_after_evaluate(
-    future: concurrent.futures.Future,  # type: ignore
-    results: List[Tuple[ClientProxy, EvaluateRes]],
-    failures: List[Union[Tuple[ClientProxy, EvaluateRes], BaseException]],
+        future: concurrent.futures.Future,  # type: ignore
+        results: List[Tuple[ClientProxy, EvaluateRes]],
+        failures: List[Union[Tuple[ClientProxy, EvaluateRes], BaseException]],
 ) -> None:
     """Convert finished future into either a result or a failure."""
     # Check if there was an exception
