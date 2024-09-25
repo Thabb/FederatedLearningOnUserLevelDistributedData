@@ -232,17 +232,17 @@ class Server:
 
         # TODO: This is but a prototype. If this works this needs to be rewritten in a shorter, more comprehensible form
         # Check if this Federated Daisy-Chaining
-        if is_daisy_chaining and not server_round == 1:
+        if is_daisy_chaining and not (server_round == 1):
             log(INFO, "Daisy chaining round %s has been started with b = %s and d = %s",
                 server_round-1,
                 aggregate_cycle,
                 daisy_chaining_cycle)
             # Check if the previous round was an aggregate round. If it is this is the only case in
             # Federated Daisy-Chaining in which no parameters need to be replaced.
-            if server_round % aggregate_cycle - 1:
+            if (server_round-1) % aggregate_cycle:
                 log(INFO, "This is not an aggregate round.")
                 # Check if this is a Daisy-Chaining round.
-                if server_round % daisy_chaining_cycle - 1:
+                if (server_round-1) % daisy_chaining_cycle:
                     log(INFO, "This is not a daisy chaining round.")
                     # The previous round was no Daisy-Chaining round, so the parameters from the previous round will
                     # apply and are assigned to their respective client.
